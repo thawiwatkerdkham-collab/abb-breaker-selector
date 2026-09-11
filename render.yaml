@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: abb-breaker-selector
+    runtime: node
+    buildCommand: ""
+    startCommand: node server.js

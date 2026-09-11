@@ -1,6 +1,262 @@
-<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ABB Breaker Selector</title><style>
-*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:#f4f6f8;color:#172033}header{background:#111827;color:white;padding:22px 28px;display:flex;justify-content:space-between;align-items:center}header h1{margin:0;font-size:22px}header small{opacity:.7}.wrap{max-width:1400px;margin:24px auto;padding:0 18px}.card{background:white;border:1px solid #e5e7eb;border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 3px 12px #0000000b}.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:6px;color:#4b5563}.field input,.field select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:9px;background:white}.actions{display:flex;gap:10px;margin-top:14px}.btn{border:0;border-radius:9px;padding:10px 16px;font-weight:700;cursor:pointer}.primary{background:#e31b23;color:white}.muted{background:#eef1f4;color:#374151}.summary{display:flex;gap:8px;flex-wrap:wrap}.pill{background:#f1f5f9;border-radius:999px;padding:7px 11px;font-size:13px}.recs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.rec{border:1px solid #e5e7eb;border-radius:12px;padding:15px}.rec h3{margin:8px 0 4px}.price{font-weight:800;font-size:18px;margin-top:10px}.table-wrap{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{text-align:left;padding:11px;border-bottom:1px solid #e5e7eb;white-space:nowrap}th{background:#f8fafc;position:sticky;top:0}.badge{display:inline-block;padding:4px 7px;border-radius:6px;background:#eef2ff;font-size:11px}.adminlink{color:white;text-decoration:none;background:#374151;padding:8px 12px;border-radius:8px}@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.recs{grid-template-columns:1fr}}@media(max-width:520px){.grid{grid-template-columns:1fr}header{padding:16px}.wrap{margin:14px auto}}
-</style></head><body><header><div><h1>ABB Breaker Selector</h1><small>Product & price selection system</small></div><a class="adminlink" href="/admin">Admin</a></header><main class="wrap"><section class="card"><h2>เลือกเบรกเกอร์</h2><div class="grid"><div class="field"><label>ประเภท</label><select id="category"><option value="any">ทั้งหมด</option><option>MCCB</option><option>ACB</option></select></div><div class="field"><label>กระแสขั้นต่ำ (A)</label><input id="current" type="number" min="0" placeholder="เช่น 400"></div><div class="field"><label>แรงดัน</label><select id="voltage"><option value="415">415 V</option></select></div><div class="field"><label>จำนวน Pole</label><select id="poles"><option value="any">ทั้งหมด</option><option value="1">1P</option><option value="2">2P</option><option value="3" selected>3P</option><option value="4">4P</option></select></div><div class="field"><label>Trip Unit</label><select id="trip"><option value="any">ทั้งหมด</option><option value="Thermal-magnetic">Thermal-magnetic</option><option value="Ekip Dip - LI">Ekip Dip - LI</option><option value="Ekip Dip - LSIG">Ekip Dip - LSIG</option><option value="Ekip Touch - LI">Ekip Touch - LI</option><option value="Ekip Touch - LSIG">Ekip Touch - LSIG</option></select></div><div class="field"><label>Icu ขั้นต่ำ (kA)</label><input id="icu" type="number" min="0" placeholder="เช่น 36"></div><div class="field"><label>Ics ขั้นต่ำ (%)</label><input id="ics" type="number" min="0" max="100" value="0"></div><div class="field"><label>งบสูงสุด (บาท)</label><input id="budget" type="number" min="0" placeholder="ไม่จำกัด"></div><div class="field"><label>เรียงตาม</label><select id="sort"><option value="price">ราคาต่ำ → สูง</option><option value="current">Current ต่ำ → สูง</option><option value="icu">Icu สูง → ต่ำ</option></select></div></div><div class="actions"><button class="btn primary" onclick="search()">ค้นหา</button><button class="btn muted" onclick="resetForm()">รีเซ็ต</button></div></section><section class="card"><div class="summary" id="summary"></div></section><section id="recommendations" class="recs"></section><section class="card"><div class="table-wrap"><table><thead><tr><th>Type</th><th>Model / Series</th><th>Current</th><th>Poles</th><th>Icu</th><th>Ics</th><th>Trip</th><th>Version</th><th>Order Code</th><th>ราคา</th></tr></thead><tbody id="results"></tbody></table></div></section></main><script>
-let DATA=[];const money=n=>n==null?'—':new Intl.NumberFormat('th-TH').format(n)+' ฿';
-async function load(){DATA=await fetch('/api/products').then(r=>r.json());search()}function val(id){return document.getElementById(id).value}function search(){const f={current:+val('current')||0,voltage:+val('voltage'),poles:val('poles'),category:val('category'),trip:val('trip'),icu:+val('icu')||0,ics:+val('ics')||0,budget:val('budget')===''?Infinity:+val('budget'),sort:val('sort')};let rows=DATA.filter(x=>x.active!==false&&x.current>=f.current&&x.voltage===f.voltage&&(f.poles==='any'||x.poles===+f.poles)&&(f.category==='any'||x.category===f.category)&&(f.trip==='any'||x.trip===f.trip)&&x.icu>=f.icu&&x.ics>=f.ics&&(x.price==null||x.price<=f.budget));rows.sort((a,b)=>f.sort==='price'?(a.price??Infinity)-(b.price??Infinity):f.sort==='current'?a.current-b.current:b.icu-a.icu||a.price-b.price);document.getElementById('summary').innerHTML=`<span class="pill"><b>${rows.length}</b> รายการ</span><span class="pill">Current ≥ ${f.current} A</span><span class="pill">Icu ≥ ${f.icu} kA</span><span class="pill">Ics ≥ ${f.ics}%</span>`;document.getElementById('recommendations').innerHTML=rows.slice(0,3).map((x,i)=>`<div class="rec"><span class="badge">${i===0?'BEST MATCH':x.category}</span><h3>${x.model}</h3><div>${x.series} · ${x.current.toLocaleString()} A · ${x.poles}P</div><div>Icu ${x.icu} kA · Ics ${x.ics}%</div><div class="price">${money(x.price)}</div></div>`).join('');document.getElementById('results').innerHTML=rows.map(x=>`<tr><td><span class="badge">${x.category}</span></td><td><b>${x.model}</b><br><small>${x.series}</small></td><td>${x.current.toLocaleString()} A</td><td>${x.poles}P</td><td>${x.icu} kA</td><td>${x.ics}%</td><td>${x.trip}</td><td>${x.version||'—'}</td><td>${x.ordercode||'—'}</td><td><b>${money(x.price)}</b></td></tr>`).join('')||'<tr><td colspan="10">ไม่พบรายการ</td></tr>'}function resetForm(){['current','icu','budget'].forEach(id=>document.getElementById(id).value='');document.getElementById('category').value='any';document.getElementById('voltage').value='415';document.getElementById('poles').value='3';document.getElementById('trip').value='any';document.getElementById('ics').value='0';document.getElementById('sort').value='price';search()}load();
-</script></body></html>
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Breaker Selector | ABB Catalog Prototype</title>
+<style>
+:root {
+  --ink:#182334;
+  --ink-2:#344255;
+  --muted:#718096;
+  --line:#dbe3ec;
+  --panel:#ffffff;
+  --bg:#eef2f6;
+  --accent:#d71920;
+  --accent-dark:#a80f15;
+  --soft:#f7f9fb;
+  --shadow:0 12px 32px rgba(24,35,52,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",Tahoma,sans-serif}
+.topbar{background:linear-gradient(135deg,#111a27,#223247);color:#fff}
+.nav{max-width:1360px;margin:auto;padding:18px 26px;display:flex;justify-content:space-between;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{width:42px;height:42px;border-radius:12px;background:var(--accent);display:grid;place-items:center;font-weight:800;font-size:17px;box-shadow:0 8px 22px rgba(215,25,32,.35)}
+.brand h1{font-size:20px;margin:0;letter-spacing:.2px}
+.brand p{margin:3px 0 0;color:#bdc9d6;font-size:12px}
+.status{font-size:12px;color:#dce5ee;background:rgba(255,255,255,.09);padding:8px 12px;border:1px solid rgba(255,255,255,.12);border-radius:999px}
+.hero{max-width:1360px;margin:auto;padding:28px 26px 36px}
+.hero-grid{display:grid;grid-template-columns:1fr auto;gap:20px;align-items:end}
+.hero h2{margin:0;font-size:31px;line-height:1.12}
+.hero h2 span{color:#f04a50}
+.hero p{margin:10px 0 0;color:#b9c6d4;max-width:680px;font-size:14px;line-height:1.6}
+.stats{display:flex;gap:10px;flex-wrap:wrap}
+.stat{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:11px 15px;min-width:115px}
+.stat b{display:block;font-size:17px} .stat span{font-size:11px;color:#b9c6d4}
+.wrap{max-width:1360px;margin:-12px auto 36px;padding:0 26px}
+.filter-card,.result-card,.info-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.filter-card{padding:22px;margin-bottom:18px}
+.section-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px}
+.section-title{margin:0;font-size:16px} .section-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.filter-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.field{display:flex;flex-direction:column;gap:7px}
+.field label{font-size:12px;font-weight:650;color:var(--ink-2)}
+input,select{height:46px;border:1px solid #cfd9e4;border-radius:11px;padding:0 13px;background:#fff;color:var(--ink);font-size:14px;outline:none;transition:.18s}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(215,25,32,.09)}
+.actions{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px;flex-wrap:wrap}
+.action-left{display:flex;gap:9px;flex-wrap:wrap}
+button{height:44px;border-radius:11px;padding:0 18px;border:1px solid transparent;font-weight:700;cursor:pointer;font-size:13px}
+.primary{background:var(--accent);color:#fff;box-shadow:0 7px 16px rgba(215,25,32,.2)} .primary:hover{background:var(--accent-dark)}
+.secondary{background:#fff;border-color:#cfd9e4;color:var(--ink-2)} .secondary:hover{background:var(--soft)}
+.helper{font-size:12px;color:var(--muted)}
+.result-card{padding:22px;overflow:hidden}
+.result-toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:15px;flex-wrap:wrap}
+.summary{display:flex;gap:8px;flex-wrap:wrap}
+.pill{background:#f1f4f7;border:1px solid #e0e6ed;border-radius:999px;padding:7px 10px;font-size:12px;color:#3f4d5c}
+.pill strong{color:var(--ink)}
+.recommendations{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.rec{border:1px solid var(--line);border-radius:14px;padding:14px;background:linear-gradient(180deg,#fff,#fafbfd)}
+.rec-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.rec-type{font-size:10px;font-weight:800;letter-spacing:.6px;padding:5px 7px;border-radius:7px;background:#edf1f5;color:#455364}
+.rec h3{font-size:16px;margin:11px 0 4px} .rec small{color:var(--muted)} .rec-price{font-weight:800;font-size:16px;margin-top:11px;color:var(--accent)}
+.table-wrap{overflow:auto;border:1px solid #e4e9ef;border-radius:13px}
+table{width:100%;border-collapse:collapse;min-width:980px;font-size:13px}
+th{background:#f5f7fa;color:#667588;text-align:left;padding:12px 11px;font-size:11px;letter-spacing:.2px;text-transform:uppercase;border-bottom:1px solid #e1e7ee}
+td{padding:13px 11px;border-bottom:1px solid #edf1f4;vertical-align:middle}
+tbody tr:hover{background:#fafbfd} tbody tr:last-child td{border-bottom:0}
+.model{font-weight:800;font-size:14px} .series{font-size:11px;color:var(--muted);margin-top:3px}
+.badge{display:inline-flex;align-items:center;padding:5px 8px;border-radius:7px;background:#eef2f6;color:#465566;font-size:11px;font-weight:700}
+.price{font-weight:800;color:var(--ink)} .order{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;color:#58687a}
+.empty{padding:50px 20px;text-align:center;color:var(--muted)}
+.info-card{margin-top:18px;padding:18px 20px;color:#617082;font-size:12px;line-height:1.65}
+.info-card b{color:var(--ink)}
+.footer{max-width:1360px;margin:0 auto;padding:0 26px 28px;color:#8491a0;font-size:11px}
+@media(max-width:1050px){.filter-grid{grid-template-columns:repeat(3,1fr)}.recommendations{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.nav,.hero,.wrap,.footer{padding-left:15px;padding-right:15px}.nav{align-items:flex-start}.status{display:none}.hero-grid{grid-template-columns:1fr}.hero h2{font-size:25px}.filter-grid{grid-template-columns:1fr 1fr}.recommendations{grid-template-columns:1fr}}
+@media(max-width:480px){.filter-grid{grid-template-columns:1fr}.hero{padding-top:20px}.wrap{margin-top:-8px}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="nav">
+    <div class="brand">
+      <div class="logo">BS</div>
+      <div><h1>Breaker Selector</h1><p>ABB Catalog · MCCB & ACB Selection Prototype</p></div>
+    </div>
+    <div class="status">Catalog-based prototype · 415 V AC</div>
+  </div>
+  <div class="hero">
+    <div class="hero-grid">
+      <div>
+        <h2>เลือก Breaker ให้ตรง <span>Spec และงบประมาณ</span></h2>
+        <p>ค้นหาจากกระแสใช้งาน, Icu, Ics, Trip Unit, จำนวน Pole และงบประมาณ พร้อมเปรียบเทียบ MCCB และ ACB จากข้อมูลใน Prototype เดิม</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="totalCount">—</b><span>รายการในฐานข้อมูล</span></div>
+        <div class="stat"><b>MCCB + ACB</b><span>ประเภท Breaker</span></div>
+        <div class="stat"><b>415 V</b><span>แรงดันใน Prototype</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="filter-card">
+    <div class="section-head">
+      <div><h2 class="section-title">Search criteria</h2><div class="section-sub">กำหนดเงื่อนไข แล้วระบบจะแสดงเฉพาะรุ่นที่ผ่านทุกเงื่อนไข</div></div>
+      <div class="helper">Current ของรุ่นต้อง ≥ กระแสที่ระบุ</div>
+    </div>
+
+    <div class="filter-grid">
+      <div class="field"><label>ประเภทเบรกเกอร์</label><select id="category"><option value="any">ทั้งหมด</option><option value="MCCB">MCCB</option><option value="ACB">ACB</option></select></div>
+      <div class="field"><label>กระแสใช้งาน / Current (A)</label><input id="current" type="number" min="0" placeholder="เช่น 2000"></div>
+      <div class="field"><label>แรงดันระบบ (V)</label><select id="voltage"><option value="415">415 V AC</option></select></div>
+      <div class="field"><label>จำนวน Pole</label><select id="poles"><option value="3">3P</option><option value="4">4P</option><option value="any">ไม่จำกัด</option></select></div>
+      <div class="field"><label>Trip Unit</label><select id="trip"><option value="any">ทั้งหมด</option><option>Thermal-magnetic</option><option>Ekip Dip - LI</option><option>Ekip Dip - LSIG</option><option>Ekip Touch - LI</option><option>Ekip Touch - LSIG</option></select></div>
+      <div class="field"><label>Icu ขั้นต่ำ (kA)</label><input id="icu" type="number" min="0" value="0"></div>
+      <div class="field"><label>Ics ขั้นต่ำ (%)</label><select id="ics"><option value="0">ไม่จำกัด</option><option value="50">≥ 50%</option><option value="75">≥ 75%</option><option value="100">100%</option></select></div>
+      <div class="field"><label>งบสูงสุด (บาท)</label><input id="budget" type="number" min="0" placeholder="เช่น 400000"></div>
+      <div class="field"><label>เรียงผลลัพธ์</label><select id="sort"><option value="price">ราคาต่ำ → สูง</option><option value="current">Current ต่ำ → สูง</option><option value="icu">Icu สูง → ต่ำ</option></select></div>
+    </div>
+
+    <div class="actions">
+      <div class="action-left"><button class="primary" onclick="search()">ค้นหา Breaker</button><button class="secondary" onclick="resetForm()">ล้างเงื่อนไข</button></div>
+      <div class="helper">Tip: เว้นงบว่างไว้ หากต้องการดูทุกราคาที่ผ่าน Spec</div>
+    </div>
+  </section>
+
+  <section class="result-card">
+    <div class="result-toolbar">
+      <div><h2 class="section-title">Results</h2><div class="section-sub">เรียงตามเงื่อนไขที่คุณเลือก</div></div>
+      <div class="summary" id="summary"></div>
+    </div>
+    <div id="recommendations" class="recommendations"></div>
+    <div id="results"></div>
+  </section>
+
+  <section class="info-card">
+    <b>Prototype note:</b> Interface นี้ปรับจากไฟล์ v3 เดิม โดยคงฐานข้อมูลและหลักการค้นหาเดิมไว้ แต่เพิ่มการแสดงผลประเภท Breaker, Series, Version และ Order Code ให้ชัดขึ้นในตาราง
+  </section>
+</main>
+
+<footer class="footer">Breaker Selector Prototype · ตรวจสอบ catalog และเงื่อนไขการใช้งานจริงก่อนนำผลไปเลือกอุปกรณ์</footer>
+
+<script>
+let DATA = [];
+const money = n => n == null ? "—" : new Intl.NumberFormat('th-TH').format(n) + " ฿";
+
+async function loadData() {
+  try {
+    const response = await fetch('/data/breakers.json');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    DATA = await response.json();
+    DATA.forEach(x => {
+      if (!x.category) x.category = "MCCB";
+      if (!x.series) x.series = "Tmax XT";
+    });
+    document.getElementById("totalCount").textContent = DATA.length.toLocaleString();
+    search();
+  } catch (error) {
+    console.error(error);
+    document.getElementById("totalCount").textContent = "0";
+    document.getElementById('results').innerHTML = '<div class="empty"><b>โหลดฐานข้อมูลไม่สำเร็จ</b><br><span>กรุณาตรวจสอบว่า server ทำงานอยู่ และไฟล์ /data/breakers.json มีอยู่</span></div>';
+  }
+}
+
+DATA.forEach(x => {
+  if (!x.category) x.category = "MCCB";
+  if (!x.series) x.series = "Tmax XT";
+});
+document.getElementById("totalCount").textContent = DATA.length.toLocaleString();
+
+function currentFilters() {
+  return {
+    current: Number(document.getElementById('current').value || 0),
+    voltage: Number(document.getElementById('voltage').value),
+    poles: document.getElementById('poles').value,
+    category: document.getElementById('category').value,
+    trip: document.getElementById('trip').value,
+    icu: Number(document.getElementById('icu').value || 0),
+    ics: Number(document.getElementById('ics').value || 0),
+    budget: document.getElementById('budget').value === "" ? Infinity : Number(document.getElementById('budget').value),
+    sort: document.getElementById('sort').value
+  };
+}
+
+function search() {
+  const f = currentFilters();
+  let rows = DATA.filter(x =>
+    x.current >= f.current &&
+    x.voltage === f.voltage &&
+    (f.poles === "any" || x.poles === Number(f.poles)) &&
+    (f.category === "any" || x.category === f.category) &&
+    (f.trip === "any" || x.trip === f.trip) &&
+    x.icu >= f.icu &&
+    x.ics >= f.ics &&
+    x.price <= f.budget
+  );
+
+  rows.sort((a,b) =>
+    f.sort === "price" ? a.price - b.price :
+    f.sort === "current" ? a.current - b.current :
+    b.icu - a.icu || a.price - b.price
+  );
+
+  document.getElementById('summary').innerHTML =
+    `<span class="pill"><strong>${rows.length}</strong> รายการ</span>
+     <span class="pill">Current ≥ ${f.current || 0} A</span>
+     <span class="pill">Icu ≥ ${f.icu} kA</span>
+     <span class="pill">Ics ≥ ${f.ics}%</span>`;
+
+  const rec = rows.slice(0,3);
+  document.getElementById('recommendations').innerHTML = rec.length ? rec.map((x,i)=>`
+    <div class="rec">
+      <div class="rec-top"><span class="rec-type">${i===0 ? "BEST MATCH" : x.category}</span><span class="badge">${x.version || "Standard"}</span></div>
+      <h3>${x.model}</h3>
+      <small>${x.series} · ${x.current.toLocaleString()} A · ${x.poles}P</small>
+      <div style="margin-top:10px"><span class="badge">Icu ${x.icu} kA</span> <span class="badge">Ics ${x.ics}%</span></div>
+      <div class="rec-price">${money(x.price)}</div>
+    </div>`).join('') : "";
+
+  if(!rows.length) {
+    document.getElementById('results').innerHTML = '<div class="empty"><b>ไม่พบรุ่นที่ตรงเงื่อนไข</b><br><span>ลองลดค่า Icu / Ics, เพิ่มงบ หรือเปลี่ยนประเภท Breaker เป็น “ทั้งหมด”</span></div>';
+    return;
+  }
+
+  document.getElementById('results').innerHTML = `<div class="table-wrap"><table>
+    <thead><tr>
+      <th>Type</th><th>Model / Series</th><th>Current</th><th>Poles</th><th>Icu</th><th>Ics</th><th>Trip Unit</th><th>Version</th><th>Order Code</th><th>ราคา</th>
+    </tr></thead>
+    <tbody>${rows.map(x=>`<tr>
+      <td><span class="badge">${x.category}</span></td>
+      <td><div class="model">${x.model}</div><div class="series">${x.series}</div></td>
+      <td>${x.current.toLocaleString()} A</td>
+      <td>${x.poles}P</td>
+      <td>${x.icu} kA</td>
+      <td>${x.ics}%</td>
+      <td><span class="badge">${x.trip}</span></td>
+      <td>${x.version || "—"}</td>
+      <td class="order">${x.ordercode || "—"}</td>
+      <td class="price">${money(x.price)}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+function resetForm() {
+  document.getElementById('category').value='any';
+  document.getElementById('current').value='';
+  document.getElementById('voltage').value='415';
+  document.getElementById('poles').value='3';
+  document.getElementById('trip').value='any';
+  document.getElementById('icu').value='0';
+  document.getElementById('ics').value='0';
+  document.getElementById('budget').value='';
+  document.getElementById('sort').value='price';
+  search();
+}
+
+loadData();
+</script>
+</body>
+</html>
