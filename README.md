@@ -1,39 +1,50 @@
-# ABB Breaker Selector
+# ABB Product Price List 2026 — Search Interface
 
-Web app for selecting ABB MCCB/ACB using current, voltage, poles, trip unit, Icu, Ics and budget.
+เว็บค้นหาราคาผลิตภัณฑ์ ABB จากไฟล์ **Price List 2026 - Low Voltage Products Thailand**
 
-## Project structure
+## โครงสร้าง
 
 ```text
-abb-breaker-selector/
-├─ data/
-│  └─ breakers.json
-├─ public/
-│  └─ index.html
-├─ README.md
-├─ server.js
-├─ start.bat
-└─ render.yaml
+abb-product-price-list-2026/
+├── data/
+│   ├── products.json
+│   └── Price list ABB 2026.pdf
+├── public/
+│   └── index.html
+├── README.md
+├── server.js
+├── start.bat
+├── render.yaml
+└── .gitignore
 ```
 
-## Run on Windows
+## Run บนเครื่อง
 
-1. Install Node.js.
-2. Double-click `start.bat`, or run `node server.js`.
-3. Open `http://localhost:3000`.
+ต้องมี Node.js 18+ แล้วรัน:
 
-## Deploy on Render
+```bash
+node server.js
+```
 
-Create a **Web Service** connected to this GitHub repository.
+จากนั้นเปิด `http://localhost:3000`
 
-- Runtime: Node
-- Build Command: leave blank
-- Start Command: `node server.js`
+หรือดับเบิลคลิก `start.bat`
 
-The server uses Render's `PORT` environment variable automatically, serves the UI from `public/`, and serves the catalog from `data/breakers.json`.
+## Deploy บน Render
 
-## Data
+1. สร้าง GitHub repository ใหม่
+2. Upload ไฟล์ทั้งหมดในโฟลเดอร์นี้
+3. ใน Render เลือก **New → Web Service**
+4. เลือก repository นี้
+5. Runtime: Node
+6. Build Command: เว้นว่าง
+7. Start Command: `node server.js`
+8. Deploy
 
-Edit `data/breakers.json` to update the breaker catalog. The browser loads it from `/data/breakers.json` when the app starts.
+`render.yaml` มีค่าพร้อมใช้สำหรับ Blueprint deployment ด้วย
 
-> The catalog data in this prototype comes from the original Breaker Selector prototype. Verify current ABB catalog/pricing and application requirements before using a result for an actual design or purchase.
+## หมายเหตุข้อมูล
+
+- `products.json` เป็นข้อมูลที่สกัดจากตารางราคาที่อ่านได้จาก PDF เพื่อใช้ค้นหาในหน้าเว็บ
+- หน้าเว็บแสดงเลขหน้า PDF ของแต่ละรายการ และมีปุ่มเปิด PDF ต้นฉบับไปยังหน้านั้น
+- ราคาคือราคาที่ปรากฏใน Price List 2026 และควรตรวจสอบ PDF ต้นฉบับอีกครั้งก่อนใช้สั่งซื้อจริง
