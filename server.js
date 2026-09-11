@@ -17,8 +17,7 @@ function send(res, status, body, type='text/plain; charset=utf-8') {
 function safePath(urlPath) {
   let p = decodeURIComponent(urlPath.split('?')[0]);
   if (p === '/') p = '/public/index.html';
-  else if (p === '/source.pdf') p = '/data/Price list ABB 2026.pdf';
-  else if (p === '/data/products.json') p = '/data/products.json';
+  else if (p === '/data/breakers.json') p = '/data/breakers.json';
   else p = '/public' + p;
   const full = path.normalize(path.join(ROOT, p));
   if (!full.startsWith(ROOT)) return null;
@@ -36,4 +35,4 @@ const server = http.createServer((req,res)=>{
     fs.createReadStream(file).pipe(res);
   });
 });
-server.listen(PORT, '0.0.0.0', ()=> console.log(`ABB Product Price List running on port ${PORT}`));
+server.listen(PORT, '0.0.0.0', ()=> console.log(`ABB Breaker Price Finder running on port ${PORT}`));
