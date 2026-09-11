@@ -1,18 +1,21 @@
-# ABB Breaker Selector — Web Prototype
+# ABB Breaker Selector — Real Web App
 
-นี่คือเวอร์ชัน Web ของ ABB Breaker Selector Prototype v4
-- เปิด `public/index.html` ได้โดยตรงใน browser
-- หรือวางโฟลเดอร์ `public` ไว้บน static web hosting ได้
-- ฐานข้อมูลสินค้ายังฝังอยู่ในหน้าเว็บเหมือน Prototype เดิม
+ระบบนี้แยก Frontend / API / Database แล้ว
 
-## ถ้าจะทำเป็นระบบจริง
-ขั้นถัดไปควรแยก:
-Frontend → Backend/API → Database
-และเพิ่ม Admin Panel สำหรับ:
-- เพิ่ม/แก้/ปิดการใช้งานสินค้า
-- อัปเดตราคา
-- Import Excel/CSV
-- เก็บประวัติราคา
-- จัดการสิทธิ์ Admin/User
+- User: `http://localhost:3000/`
+- Admin: `http://localhost:3000/admin`
+- Database: `data/products.json` (แก้ไขผ่าน Admin ได้ ไม่ต้อง rebuild)
+- Password เริ่มต้นใน `start.bat` คือ `admin123` — เปลี่ยนก่อนใช้งานจริง
 
-เวอร์ชันนี้ยังไม่มีระบบ Login/Database/แก้ข้อมูลจากหน้า Admin
+## วิธีรัน
+1. ติดตั้ง Node.js
+2. ดับเบิลคลิก `start.bat`
+3. เปิด browser ไปที่ `http://localhost:3000`
+
+## Admin ทำอะไรได้
+- เพิ่มสินค้า
+- แก้ราคา / Current / Icu / Ics / Trip / Order Code
+- เปิด/ปิดสินค้า
+- ข้อมูลถูกบันทึกถาวรใน database JSON
+
+หมายเหตุ: รุ่นนี้เป็นฐานสำหรับนำขึ้น internal server/cloud ต่อไป หากจะใช้งานหลายคนพร้อมกันในบริษัท แนะนำย้าย database เป็น PostgreSQL และเพิ่มระบบ user/role จริง
