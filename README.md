@@ -1,41 +1,14 @@
-# ABB Breaker Price Finder
+# Product Selector Project
 
-Web app for selecting ABB MCCB/ACB using technical data from the ABB 2024 catalog and prices from the ABB 2026 Thailand price list.
+โปรเจกต์สำหรับคัดเลือกสินค้า (Product Selector) รองรับทั้งการรันแบบ Static Web และ Node.js Server
 
-## Project structure
+## โครงสร้างโฟลเดอร์
+- `public/` : ไฟล์เว็บหน้าบ้าน (HTML, CSS, JS)
+- `data/` : เก็บไฟล์ข้อมูล JSON
+- `server.js` : ไฟล์ Server (Express.js) สำหรับปรับแต่ง API/Render
+- `start.bat` / `start_web.bat` : สคริปต์รันโปรเจกต์
+- `render.yaml` : ไฟล์ตั้งค่าสำหรับการ Deploy ขึ้น Render.com
 
-```text
-abb-breaker-selector/
-├─ data/
-│  └─ breakers.json
-├─ public/
-│  └─ index.html
-├─ README.md
-├─ render.yaml
-├─ server.js
-├─ start.bat
-└─ start_web.bat
-```
-
-## Run on Windows
-
-1. Install Node.js.
-2. Double-click `start_web.bat`, or run `start.bat`.
-3. Open `http://localhost:3000`.
-
-## Deploy on Render
-
-Create a Web Service connected to this GitHub repository.
-
-- Runtime: Node
-- Build Command: leave blank
-- Start Command: `node server.js`
-
-## Data
-
-- Technical data: ABB catalog 2024
-- Price data: ABB Thailand price list 2026
-- Ics values remain displayed as kA in the table.
-- The Ics filter dropdown uses `% Icu` options: 25%, 50%, 75%, 100% Icu.
-
-Verify current ABB catalog/pricing and application requirements before using a result for an actual design or purchase.
+## การใช้งาน
+1. เปิดไฟล์ `public/index.html` บน Browser เพื่อใช้งานแบบ offline
+2. หรือใช้สคริปต์ `start.bat` เพื่อรันผ่าน Node.js server
